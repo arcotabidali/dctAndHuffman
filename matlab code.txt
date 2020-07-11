@@ -1,0 +1,99 @@
+
+
+%DCT
+
+filename1=uigetfile({'*.wav'},'Select an Audio File');% loading audio file
+[x,Fs] = audioread(filename1);
+X = dct(x);%applying dct
+[XX,ind] = sort(abs(X),'descend');%sorting coeeficients in decending order
+need = 1;
+while norm(X(ind(1:need)))/norm(X)<0.999%calulating suffitient coefficient 
+ need = need+1;
+end
+Coefficents_need=need;
+xpc = (need/(2*length(X)))*100;
+x_compressed = idct(X(1:need));%reconstructing signal
+figure 
+subplot(3,1,1);
+plot(x,'r');title('original')
+subplot(3,1,2);
+plot(x_compressed,'g');title('compressed');
+legend([int2str(xpc) '% of coeffs.']);
+
+filename2 = 'compressed.wav';
+audiowrite(filename2,x_compressed,Fs);
+
+
+
+%calculatiing MSE, PSNR, Compression ratio
+
+[y1,fs1]=audioread(filename1);
+[y2,fs2]=audioread(filename2);
+[c1x,c1y]=size(y1);
+[c2x,c2y]=size(y1);
+if c1x ~= c2x
+ disp('dimeonsions do not agree');
+else
+R=c1x;
+C=c1y;
+ err = (sum(y1(2)-y2).^2)/(R*C);%calculatiing MSE, PSNR,MSE
+MSE=sqrt(err);
+MAXVAL=255;
+ PSNR = 20*log10(MAXVAL/MSE);
+ MSE= num2str(MSE);
+end
+fileinfo = dir(filename1);
+SIZE = fileinfo.bytes;
+Size = SIZE/1024;
+fileinfo1 = dir(filename2);
+SIZE1 = fileinfo1.bytes;
+Size1 = SIZE1/1024;
+CompressionRatio = Size/Size1;
+
+disp('CompressionRatio:');
+ disp(CompressionRatio);
+ disp('PSNR  :'); 
+  disp(PSNR);
+  disp('MSE :');
+   disp(MSE);
+   
+
+   
+%huffman coding
+
+X=dct(x1);
+[XX,ind] = sort(abs(X),'descend');
+X(ind(need+1:end)) =0;
+bits =8;
+partition =linspace(min(X),max(X),256);%quntizing in 256 levels
+codebook = linspace(min(X)-1/256,max(X),257); % Length 257, assingning quntized valuel
+[index,quantized] = quantiz(x1,partition,codebook); % Quantization.
+figure;
+histogram(quantized,257,'Normalization','probability');
+h2 = histc(index+1,1:length(codebook));%calulating frequency of symbols of each bin
+p = h2/length(X);%probabilty of symbols
+dict = huffmandict(codebook,p);%generating dictionary for huffman coding
+hcode= huffmanenco(quantized,dict);%huffman encoding
+dhsig= huffmandeco(hcode,dict);%huffman decoding
+equal =isequal(comp,hcode);%is encoded = decoded signal
+disp(equal);
+Y=idct(dhsig);%applying idct
+filename2 = 'huffman decoded otput.wav';
+audiowrite(filename2,x_compressed,Fs);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+ 
+
